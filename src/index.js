@@ -23,7 +23,7 @@ function getCellCount(cellSize) {
 }
 
 function drawGrid(x, y, cellSize, color) {
-    // for now assert that the canvas is a sqare
+    // for now assert that the canvas is a square
     console.assert(CANVAS.width === CANVAS.height);
     // for now assert that the canvas width is divisible by the cellSize
     console.assert(CANVAS.width % cellSize === 0);
