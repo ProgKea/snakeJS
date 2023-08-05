@@ -4,11 +4,11 @@
 // NOTE: If this causes issues later, because of things not being loaded.
 // Put this inside window.onload.
 const CANVAS = getElementByIdOrError("app");
-const DEFAULT_CANVAS_SIZE = 700;
+const DEFAULT_CANVAS_SIZE = 500;
 CANVAS.width = DEFAULT_CANVAS_SIZE;
 CANVAS.height = DEFAULT_CANVAS_SIZE;
 const CTX = CANVAS.getContext("2d");
-const CELL_SIZE = 10; // TODO: make the cell size customizable
+const CELL_SIZE = 20;
 
 function getElementByIdOrError(id) {
     const element = document.getElementById(id);
@@ -109,6 +109,17 @@ class Snake {
             return;
         }
         this.nodes[0].add(this.direction);
+        if (this.isInsideTail(this.nodes[0])) {
+            this.dead = true;
+        }
+    }
+
+    isInside(cell) {
+        return this.nodes.some((e) => e.cmp(cell));
+    }
+
+    isInsideTail(cell) {
+        return this.nodes.slice(1).some((e) => e.cmp(cell));
     }
 }
 
@@ -117,18 +128,62 @@ function clear(color) {
     CTX.fillRect(0, 0, CANVAS.width, CANVAS.height);
 }
 
+function getRandomCell() {
+    const cellCount = getCellCount(CELL_SIZE);
+    return new Vector(Math.floor(Math.random() * cellCount.x),
+                      Math.floor(Math.random() * cellCount.y));
+}
+
 class Game {
     constructor() {
         this.snake = new Snake();
         this.score = 0;
+        this.genNewApple();
+        this.appleColor = "red";
     }
 
-    update() {
-        if (this.snake.dead) return; // TODO
-        this.snake.update();
+    genNewApple() {
+        let newApple = getRandomCell();
+        while (this.snake.isInside(newApple)) {
+            newApple = getRandomCell();
+        }
+        this.apple = newApple;
+    }
+
+    draw() {
         clear("green");
         this.snake.draw();
+        CTX.fillStyle = this.appleColor;
+        CTX.fillRect(this.apple.x * CELL_SIZE, this.apple.y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
         drawGrid(0, 0, CELL_SIZE, "black");
+    }
+
+    update(lastKey) { // TODO: Maybe rename this function to something like: frame
+        if (this.snake.dead) return; // TODO: Create a main menu
+
+        switch (lastKey) {
+        case "ArrowLeft":
+            this.changeDirection(DIRECTION.left);
+            break;
+        case "ArrowRight":
+            this.changeDirection(DIRECTION.right);
+            break;
+        case "ArrowUp":
+            this.changeDirection(DIRECTION.up);
+            break;
+        case "ArrowDown":
+            this.changeDirection(DIRECTION.down);
+            break;
+        }
+
+        this.snake.update();
+        if (this.snake.isInside(this.apple)) {
+            this.scoreIncrease(1);
+            this.genNewApple();
+            this.draw();
+        }
+
+        this.draw();
     }
 
     changeDirection(new_direction) {
@@ -139,33 +194,13 @@ class Game {
     scoreIncrease(score) {
         this.score += score;
         const newNode = new Vector();
-        this.snake.nodes.push(newNode); // TODO: find the actual direction of the cell and invert it and add it to the position
-        console.log(this.snake.nodes);
+        this.snake.nodes.push(newNode);
     }
 }
 
 window.onload = () => {
     const game = new Game();
-
-    document.addEventListener("keydown", (e) => {
-        switch (e.key) {
-        case "ArrowLeft":
-            game.changeDirection(DIRECTION.left);
-            break;
-        case "ArrowRight":
-            game.changeDirection(DIRECTION.right);
-            break;
-        case "ArrowUp":
-            game.changeDirection(DIRECTION.up);
-            break;
-        case "ArrowDown":
-            game.changeDirection(DIRECTION.down);
-            break;
-        case "i":
-            game.scoreIncrease(1);
-            break;
-        }
-    });
-
-    setInterval(()=>{game.update()}, 100);
+    let lastKey;
+    document.addEventListener("keydown", (e) => lastKey = e.key);
+    setInterval(() => game.update(lastKey), 100);
 };
