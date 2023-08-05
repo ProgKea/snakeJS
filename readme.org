@@ -1,0 +1,3 @@
+* SnakeJS
+
+A simple customizable snake remake written in javascript.
